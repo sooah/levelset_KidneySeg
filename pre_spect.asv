@@ -1,0 +1,47 @@
+function prior_nm = pre_spect(spect)
+
+nm = spect(:,:,:);
+MatrixSize = size(spect,1);
+outputsizeZ = size(spect,3);
+
+prior_nm = zeros(MatrixSize, MatrixSize, outputsizeZ);
+
+actual_min = min(nm(:));
+actual_max = max(nm(:));
+desired_min = 0.0;
+desired_max = 1.0;
+
+threshold = 0.38;
+
+% normalize
+for i = 1:outputsizeZ
+    norm_img = (nm(:,:,i) - actual_min)*((desired_max - desired_min)/(actual_max - actual_min)) + desired_min;
+    norm_img(norm_img>= threshold) = 1;
+    norm_img(norm_img< threshold) = 0;
+    prior_nm(:,:,i) = norm_img;
+end
+
+    
+se = strel('disk',1);
+SE = strel('disk',3);
+
+% 작은 점들 제거
+prior_nm = imopen(prior_nm,SE);
+
+% % 작은 부분들 제거
+% prior_nm = imerode(prior_nm,SE);
+prior_nm = imclose(prior_nm,SE);
+
+
+
+
+
+prior_nm = imfill(prior_nm,'hole');
+
+prior_nm = imopen(prior_nm,se);
+
+prior_nm = imdilate(prior_nm,SE);
+prior_nm = imfill(prior_nm,'hole');
+prior_nm = imdilate(prior_nm,SE);
+prior_nm = imfill(prior_nm,'hole');
+prior_nm = imerode(prior_nm,SE);
